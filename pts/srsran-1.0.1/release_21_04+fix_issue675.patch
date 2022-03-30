@@ -1,0 +1,430 @@
+From 89f16eed2b7f2e6c45e675298f5829c230698e1d Mon Sep 17 00:00:00 2001
+From: Andre Puschmann <andre@softwareradiosystems.com>
+Date: Thu, 20 May 2021 10:42:01 +0200
+Subject: [PATCH 1/4] update mailing list link
+
+---
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/README.md b/README.md
+index 55e6e51a48..3ac88667b9 100644
+--- a/README.md
++++ b/README.md
+@@ -21,4 +21,4 @@ For license details, see LICENSE file.
+ Support
+ =======
+ 
+-Mailing list: http://www.srs.io/mailman/listinfo/srslte-users
++Mailing list: https://lists.softwareradiosystems.com/mailman/listinfo/srslte-users
+\ No newline at end of file
+
+From c6ba35bb890a1fd290ffa0101e1c506e3f2fbc4d Mon Sep 17 00:00:00 2001
+From: Pedro Alvarez <pedro.alvarez@softwareradiosystems.com>
+Date: Tue, 25 May 2021 10:56:30 +0100
+Subject: [PATCH 2/4] Fix some warnings in PHY due to array parameter mismatch
+ for a few functions
+
+---
+ lib/include/srsran/phy/mimo/precoding.h       |  2 +-
+ lib/include/srsran/phy/phch/cqi.h             |  3 ++-
+ lib/include/srsran/phy/phch/pusch_nr.h        |  2 +-
+ lib/include/srsran/phy/ue/ue_dl.h             |  2 +-
+ lib/src/phy/phch/pdsch_nr.c                   |  5 ++---
+ lib/src/phy/phch/pusch_nr.c                   |  9 ++++-----
+ lib/src/phy/phch/test/pbch_file_test.c        |  2 +-
+ lib/src/phy/phch/test/pcfich_file_test.c      |  2 +-
+ lib/src/phy/phch/test/pdcch_file_test.c       |  2 +-
+ lib/src/phy/phch/test/pdsch_pdcch_file_test.c |  2 +-
+ lib/src/phy/phch/test/phich_file_test.c       |  2 +-
+ lib/src/phy/phch/test/pmch_file_test.c        |  9 ++++++---
+ lib/src/phy/phch/test/pucch_test.c            |  2 +-
+ lib/src/phy/phch/test/pusch_nr_test.c         |  4 +++-
+ lib/src/phy/phch/uci.c                        |  9 +++++----
+ lib/src/phy/rf/rf_zmq_imp.c                   |  7 +------
+ lib/src/phy/ue/ue_dl_nr.c                     | 10 +++++-----
+ lib/test/phy/phy_dl_nr_test.c                 |  6 ++++--
+ 18 files changed, 41 insertions(+), 39 deletions(-)
+
+diff --git a/lib/include/srsran/phy/mimo/precoding.h b/lib/include/srsran/phy/mimo/precoding.h
+index a00ead41d8..5168407dea 100644
+--- a/lib/include/srsran/phy/mimo/precoding.h
++++ b/lib/include/srsran/phy/mimo/precoding.h
+@@ -89,7 +89,7 @@ SRSRAN_API int srsran_predecoding_diversity(cf_t* y,
+ SRSRAN_API int srsran_predecoding_diversity_multi(cf_t*  y[SRSRAN_MAX_PORTS],
+                                                   cf_t*  h[SRSRAN_MAX_PORTS][SRSRAN_MAX_PORTS],
+                                                   cf_t*  x[SRSRAN_MAX_LAYERS],
+-                                                  float* csi[SRSRAN_MAX_LAYERS],
++                                                  float* csi[SRSRAN_MAX_CODEWORDS],
+                                                   int    nof_rxant,
+                                                   int    nof_ports,
+                                                   int    nof_symbols,
+diff --git a/lib/include/srsran/phy/phch/cqi.h b/lib/include/srsran/phy/phch/cqi.h
+index ce01c6cccf..6dfba6b400 100644
+--- a/lib/include/srsran/phy/phch/cqi.h
++++ b/lib/include/srsran/phy/phch/cqi.h
+@@ -143,7 +143,8 @@ typedef struct {
+ 
+ SRSRAN_API int srsran_cqi_size(srsran_cqi_cfg_t* cfg);
+ 
+-SRSRAN_API int srsran_cqi_value_pack(srsran_cqi_cfg_t* cfg, srsran_cqi_value_t* value, uint8_t* buff);
++SRSRAN_API int
++srsran_cqi_value_pack(srsran_cqi_cfg_t* cfg, srsran_cqi_value_t* value, uint8_t buff[SRSRAN_CQI_MAX_BITS]);
+ 
+ SRSRAN_API int
+ srsran_cqi_value_unpack(srsran_cqi_cfg_t* cfg, uint8_t buff[SRSRAN_CQI_MAX_BITS], srsran_cqi_value_t* value);
+diff --git a/lib/include/srsran/phy/phch/pusch_nr.h b/lib/include/srsran/phy/phch/pusch_nr.h
+index 1cda3fb234..cf3b9b845e 100644
+--- a/lib/include/srsran/phy/phch/pusch_nr.h
++++ b/lib/include/srsran/phy/phch/pusch_nr.h
+@@ -113,7 +113,7 @@ SRSRAN_API int srsran_pusch_nr_decode(srsran_pusch_nr_t*           q,
+                                       const srsran_sch_grant_nr_t* grant,
+                                       srsran_chest_dl_res_t*       channel,
+                                       cf_t*                        sf_symbols[SRSRAN_MAX_PORTS],
+-                                      srsran_pusch_res_nr_t        data[SRSRAN_MAX_TB]);
++                                      srsran_pusch_res_nr_t*       data[SRSRAN_MAX_TB]);
+ 
+ SRSRAN_API uint32_t srsran_pusch_nr_rx_info(const srsran_pusch_nr_t*     q,
+                                             const srsran_sch_cfg_nr_t*   cfg,
+diff --git a/lib/include/srsran/phy/ue/ue_dl.h b/lib/include/srsran/phy/ue/ue_dl.h
+index 360bffd59c..2cf84ff953 100644
+--- a/lib/include/srsran/phy/ue/ue_dl.h
++++ b/lib/include/srsran/phy/ue/ue_dl.h
+@@ -208,7 +208,7 @@ SRSRAN_API int srsran_ue_dl_decode_pdsch(srsran_ue_dl_t*     q,
+ SRSRAN_API int srsran_ue_dl_decode_pmch(srsran_ue_dl_t*     q,
+                                         srsran_dl_sf_cfg_t* sf,
+                                         srsran_pmch_cfg_t*  pmch_cfg,
+-                                        srsran_pdsch_res_t* data);
++                                        srsran_pdsch_res_t  data[SRSRAN_MAX_CODEWORDS]);
+ 
+ SRSRAN_API int srsran_ue_dl_decode_phich(srsran_ue_dl_t*       q,
+                                          srsran_dl_sf_cfg_t*   sf,
+diff --git a/lib/src/phy/phch/pdsch_nr.c b/lib/src/phy/phch/pdsch_nr.c
+index 4fcfe7b0e5..9a2f3697c3 100644
+--- a/lib/src/phy/phch/pdsch_nr.c
++++ b/lib/src/phy/phch/pdsch_nr.c
+@@ -491,7 +491,7 @@ int srsran_pdsch_nr_decode(srsran_pdsch_nr_t*           q,
+                            srsran_pdsch_res_nr_t*       data)
+ {
+   // Check input pointers
+-  if (!q || !cfg || !grant || !data || !sf_symbols) {
++  if (!q || !cfg || !grant || !data || !sf_symbols || !channel) {
+     return SRSRAN_ERROR_INVALID_INPUTS;
+   }
+ 
+@@ -537,8 +537,7 @@ int srsran_pdsch_nr_decode(srsran_pdsch_nr_t*           q,
+ 
+   // Antenna port demapping
+   // ... Not implemented
+-  srsran_predecoding_type(
+-      q->x, channel->ce, q->d, NULL, 1, 1, 1, 0, nof_re, SRSRAN_TXSCHEME_PORT0, 1.0f, channel->noise_estimate);
++  srsran_predecoding_single(q->x[0], channel->ce[0][0], q->d[0], NULL, nof_re, 1.0f, channel->noise_estimate);
+ 
+   // Layer demapping
+   if (grant->nof_layers > 1) {
+diff --git a/lib/src/phy/phch/pusch_nr.c b/lib/src/phy/phch/pusch_nr.c
+index 3669959a49..552e58648a 100644
+--- a/lib/src/phy/phch/pusch_nr.c
++++ b/lib/src/phy/phch/pusch_nr.c
+@@ -918,10 +918,10 @@ int srsran_pusch_nr_decode(srsran_pusch_nr_t*           q,
+                            const srsran_sch_grant_nr_t* grant,
+                            srsran_chest_dl_res_t*       channel,
+                            cf_t*                        sf_symbols[SRSRAN_MAX_PORTS],
+-                           srsran_pusch_res_nr_t*       data)
++                           srsran_pusch_res_nr_t*       data[SRSRAN_MAX_TB])
+ {
+   // Check input pointers
+-  if (!q || !cfg || !grant || !data || !sf_symbols) {
++  if (!q || !cfg || !grant || !data || !sf_symbols || !channel) {
+     return SRSRAN_ERROR_INVALID_INPUTS;
+   }
+ 
+@@ -978,8 +978,7 @@ int srsran_pusch_nr_decode(srsran_pusch_nr_t*           q,
+ 
+   // Antenna port demapping
+   // ... Not implemented
+-  srsran_predecoding_type(
+-      q->x, channel->ce, q->d, NULL, 1, 1, 1, 0, nof_re, SRSRAN_TXSCHEME_PORT0, 1.0f, channel->noise_estimate);
++  srsran_predecoding_single(q->x[0], channel->ce[0][0], q->d[0], NULL, nof_re, 1.0f, channel->noise_estimate);
+ 
+   // Layer demapping
+   if (grant->nof_layers > 1) {
+@@ -988,7 +987,7 @@ int srsran_pusch_nr_decode(srsran_pusch_nr_t*           q,
+ 
+   // SCH decode
+   for (uint32_t tb = 0; tb < SRSRAN_MAX_TB; tb++) {
+-    if (pusch_nr_decode_codeword(q, cfg, &grant->tb[tb], data, grant->rnti) < SRSRAN_SUCCESS) {
++    if (pusch_nr_decode_codeword(q, cfg, &grant->tb[tb], data[0], grant->rnti) < SRSRAN_SUCCESS) {
+       ERROR("Error encoding TB %d", tb);
+       return SRSRAN_ERROR;
+     }
+diff --git a/lib/src/phy/phch/test/pbch_file_test.c b/lib/src/phy/phch/test/pbch_file_test.c
+index 73d61820cc..3d08de751b 100644
+--- a/lib/src/phy/phch/test/pbch_file_test.c
++++ b/lib/src/phy/phch/test/pbch_file_test.c
+@@ -48,7 +48,7 @@ uint8_t bch_payload_file[SRSRAN_BCH_PAYLOAD_LEN] = {0, 1, 1, 0, 1, 0, 0, 0, 0, 0
+ #define FLEN (10 * SRSRAN_SF_LEN(srsran_symbol_sz(cell.nof_prb)))
+ 
+ srsran_filesource_t   fsrc;
+-cf_t *                input_buffer, *fft_buffer[SRSRAN_MAX_CODEWORDS];
++cf_t *                input_buffer, *fft_buffer[SRSRAN_MAX_PORTS];
+ srsran_pbch_t         pbch;
+ srsran_ofdm_t         fft;
+ srsran_chest_dl_t     chest;
+diff --git a/lib/src/phy/phch/test/pcfich_file_test.c b/lib/src/phy/phch/test/pcfich_file_test.c
+index cfd97b0cb0..fba2086fc0 100644
+--- a/lib/src/phy/phch/test/pcfich_file_test.c
++++ b/lib/src/phy/phch/test/pcfich_file_test.c
+@@ -42,7 +42,7 @@ int flen;
+ FILE* fmatlab = NULL;
+ 
+ srsran_filesource_t   fsrc;
+-cf_t *                input_buffer, *fft_buffer[SRSRAN_MAX_CODEWORDS];
++cf_t *                input_buffer, *fft_buffer[SRSRAN_MAX_PORTS];
+ srsran_pcfich_t       pcfich;
+ srsran_regs_t         regs;
+ srsran_ofdm_t         fft;
+diff --git a/lib/src/phy/phch/test/pdcch_file_test.c b/lib/src/phy/phch/test/pdcch_file_test.c
+index 75e981bfb5..6596da1343 100644
+--- a/lib/src/phy/phch/test/pdcch_file_test.c
++++ b/lib/src/phy/phch/test/pdcch_file_test.c
+@@ -48,7 +48,7 @@ int      max_frames = 10;
+ srsran_dci_format_t   dci_format = SRSRAN_DCI_FORMAT1A;
+ srsran_filesource_t   fsrc;
+ srsran_pdcch_t        pdcch;
+-cf_t *                input_buffer, *fft_buffer[SRSRAN_MAX_CODEWORDS];
++cf_t *                input_buffer, *fft_buffer[SRSRAN_MAX_PORTS];
+ srsran_regs_t         regs;
+ srsran_ofdm_t         fft;
+ srsran_chest_dl_t     chest;
+diff --git a/lib/src/phy/phch/test/pdsch_pdcch_file_test.c b/lib/src/phy/phch/test/pdsch_pdcch_file_test.c
+index 91fdb65308..1bfb51f847 100644
+--- a/lib/src/phy/phch/test/pdsch_pdcch_file_test.c
++++ b/lib/src/phy/phch/test/pdsch_pdcch_file_test.c
+@@ -174,7 +174,7 @@ int main(int argc, char** argv)
+     exit(-1);
+   }
+ 
+-  uint8_t* data[] = {malloc(100000)};
++  uint8_t* data[SRSRAN_MAX_CODEWORDS] = {malloc(100000)};
+   if (!data[0]) {
+     perror("malloc");
+     exit(-1);
+diff --git a/lib/src/phy/phch/test/phich_file_test.c b/lib/src/phy/phch/test/phich_file_test.c
+index 8f8b577341..c41836e77e 100644
+--- a/lib/src/phy/phch/test/phich_file_test.c
++++ b/lib/src/phy/phch/test/phich_file_test.c
+@@ -48,7 +48,7 @@ int numsubframe      = 0;
+ FILE* fmatlab = NULL;
+ 
+ srsran_filesource_t   fsrc;
+-cf_t *                input_buffer, *fft_buffer[SRSRAN_MAX_CODEWORDS];
++cf_t *                input_buffer, *fft_buffer[SRSRAN_MAX_PORTS];
+ srsran_phich_t        phich;
+ srsran_regs_t         regs;
+ srsran_ofdm_t         fft;
+diff --git a/lib/src/phy/phch/test/pmch_file_test.c b/lib/src/phy/phch/test/pmch_file_test.c
+index 470b44029c..4279089feb 100644
+--- a/lib/src/phy/phch/test/pmch_file_test.c
++++ b/lib/src/phy/phch/test/pmch_file_test.c
+@@ -216,9 +216,12 @@ int main(int argc, char** argv)
+   SRSRAN_DCI_TB_DISABLE(dci.tb[1]);
+   srsran_ra_dl_dci_to_grant(&cell, &dl_sf, SRSRAN_TM1, false, &dci, &pmch_cfg.pdsch_cfg.grant);
+ 
+-  srsran_pdsch_res_t pdsch_res;
+-  pdsch_res.payload = data;
+-  ret               = srsran_ue_dl_decode_pmch(&ue_dl, &dl_sf, &pmch_cfg, &pdsch_res);
++  srsran_pdsch_res_t pdsch_res = {};
++  pdsch_res.payload            = data;
++
++  srsran_pdsch_res_t pdsch_res_vec[SRSRAN_MAX_CODEWORDS];
++  pdsch_res_vec[0] = pdsch_res;
++  ret              = srsran_ue_dl_decode_pmch(&ue_dl, &dl_sf, &pmch_cfg, pdsch_res_vec);
+   if (pdsch_res.crc == 1) {
+     printf("PMCH Decoded OK!\n");
+   } else if (pdsch_res.crc == 0) {
+diff --git a/lib/src/phy/phch/test/pucch_test.c b/lib/src/phy/phch/test/pucch_test.c
+index 07abb118c5..28f09adfcd 100644
+--- a/lib/src/phy/phch/test/pucch_test.c
++++ b/lib/src/phy/phch/test/pucch_test.c
+@@ -89,7 +89,7 @@ int test_uci_cqi_pucch(void)
+   int                                   ret                                  = SRSRAN_SUCCESS;
+   __attribute__((aligned(256))) uint8_t o_bits[SRSRAN_UCI_MAX_CQI_LEN_PUCCH] = {0};
+   __attribute__((aligned(256))) uint8_t e_bits[SRSRAN_UCI_CQI_CODED_PUCCH_B] = {0};
+-  __attribute__((aligned(256))) int16_t e_symb[SRSRAN_UCI_CQI_CODED_PUCCH_B] = {0};
++  __attribute__((aligned(256))) int16_t e_symb[SRSRAN_CQI_MAX_BITS]          = {0};
+   __attribute__((aligned(256))) uint8_t d_bits[SRSRAN_UCI_MAX_CQI_LEN_PUCCH] = {0};
+ 
+   srsran_uci_cqi_pucch_t uci_cqi_pucch = {0};
+diff --git a/lib/src/phy/phch/test/pusch_nr_test.c b/lib/src/phy/phch/test/pusch_nr_test.c
+index 49c5764c3c..d812ed8ba0 100644
+--- a/lib/src/phy/phch/test/pusch_nr_test.c
++++ b/lib/src/phy/phch/test/pusch_nr_test.c
+@@ -279,7 +279,9 @@ int main(int argc, char** argv)
+       }
+       chest.nof_re = pusch_cfg.grant.tb->nof_re;
+ 
+-      if (srsran_pusch_nr_decode(&pusch_rx, &pusch_cfg, &pusch_cfg.grant, &chest, sf_symbols, &data_rx) <
++      srsran_pusch_res_nr_t* data_rx_vec[SRSRAN_MAX_TB] = {};
++      data_rx_vec[0]                                    = &data_rx;
++      if (srsran_pusch_nr_decode(&pusch_rx, &pusch_cfg, &pusch_cfg.grant, &chest, sf_symbols, data_rx_vec) <
+           SRSRAN_SUCCESS) {
+         ERROR("Error encoding");
+         goto clean_exit;
+diff --git a/lib/src/phy/phch/uci.c b/lib/src/phy/phch/uci.c
+index f14147213b..0128f39681 100644
+--- a/lib/src/phy/phch/uci.c
++++ b/lib/src/phy/phch/uci.c
+@@ -129,7 +129,7 @@ int16_t srsran_uci_decode_cqi_pucch(srsran_uci_cqi_pucch_t* q,
+                                     uint8_t*                cqi_data,
+                                     uint32_t                cqi_len)
+ {
+-  if (cqi_len < SRSRAN_UCI_MAX_CQI_LEN_PUCCH && b_bits != NULL && cqi_data != NULL) {
++  if (q != NULL && cqi_len < SRSRAN_UCI_MAX_CQI_LEN_PUCCH && b_bits != NULL && cqi_data != NULL) {
+     uint32_t max_w    = 0;
+     int32_t  max_corr = INT32_MIN;
+     uint32_t nwords   = 1 << SRSRAN_UCI_MAX_CQI_LEN_PUCCH;
+@@ -655,9 +655,10 @@ int srsran_uci_decode_ack_ri(srsran_pusch_cfg_t* cfg,
+   uint32_t Qm     = srsran_mod_bits_x_symbol(cfg->grant.tb.mod);
+ 
+   int16_t  llr_acc[32] = {}; ///< LLR accumulator
+-  uint32_t nof_acc =
+-      (nof_bits == 1) ? Qm : (nof_bits == 2) ? Qm * 3 : SRSRAN_FEC_BLOCK_SIZE; ///< Number of required LLR
+-  uint32_t count_acc = 0;                                                      ///< LLR counter
++  uint32_t nof_acc     = (nof_bits == 1)   ? Qm
++                         : (nof_bits == 2) ? Qm * 3
++                                           : SRSRAN_FEC_BLOCK_SIZE; ///< Number of required LLR
++  uint32_t count_acc   = 0;                                         ///< LLR counter
+ 
+   for (uint32_t i = 0; i < Qprime; i++) {
+     if (is_ri) {
+diff --git a/lib/src/phy/rf/rf_zmq_imp.c b/lib/src/phy/rf/rf_zmq_imp.c
+index 43108e0486..e2f1331d7b 100644
+--- a/lib/src/phy/rf/rf_zmq_imp.c
++++ b/lib/src/phy/rf/rf_zmq_imp.c
+@@ -606,12 +606,7 @@ int rf_zmq_recv_with_time(void* h, void* data, uint32_t nsamples, bool blocking,
+   return rf_zmq_recv_with_time_multi(h, &data, nsamples, blocking, secs, frac_secs);
+ }
+ 
+-int rf_zmq_recv_with_time_multi(void*    h,
+-                                void*    data[4],
+-                                uint32_t nsamples,
+-                                bool     blocking,
+-                                time_t*  secs,
+-                                double*  frac_secs)
++int rf_zmq_recv_with_time_multi(void* h, void** data, uint32_t nsamples, bool blocking, time_t* secs, double* frac_secs)
+ {
+   int ret = SRSRAN_ERROR;
+ 
+diff --git a/lib/src/phy/ue/ue_dl_nr.c b/lib/src/phy/ue/ue_dl_nr.c
+index ebc83c1bf1..b8fa914195 100644
+--- a/lib/src/phy/ue/ue_dl_nr.c
++++ b/lib/src/phy/ue/ue_dl_nr.c
+@@ -582,11 +582,11 @@ int srsran_ue_dl_nr_decode_pdsch(srsran_ue_dl_nr_t*         q,
+   return SRSRAN_SUCCESS;
+ }
+ 
+-int srsran_ue_dl_nr_pdsch_info(const srsran_ue_dl_nr_t*     q,
+-                               const srsran_sch_cfg_nr_t*   cfg,
+-                               const srsran_pdsch_res_nr_t* res,
+-                               char*                        str,
+-                               uint32_t                     str_len)
++int srsran_ue_dl_nr_pdsch_info(const srsran_ue_dl_nr_t*    q,
++                               const srsran_sch_cfg_nr_t*  cfg,
++                               const srsran_pdsch_res_nr_t res[SRSRAN_MAX_CODEWORDS],
++                               char*                       str,
++                               uint32_t                    str_len)
+ {
+   int len = 0;
+ 
+diff --git a/lib/test/phy/phy_dl_nr_test.c b/lib/test/phy/phy_dl_nr_test.c
+index 985993dad3..5d012ece41 100644
+--- a/lib/test/phy/phy_dl_nr_test.c
++++ b/lib/test/phy/phy_dl_nr_test.c
+@@ -480,8 +480,10 @@ int main(int argc, char** argv)
+         }
+ 
+         if (srsran_verbose >= SRSRAN_VERBOSE_INFO) {
+-          char str[512];
+-          srsran_ue_dl_nr_pdsch_info(&ue_dl, &pdsch_cfg, &pdsch_res, str, (uint32_t)sizeof(str));
++          char                  str[512];
++          srsran_pdsch_res_nr_t pdsch_res_vec[SRSRAN_MAX_CODEWORDS] = {};
++          pdsch_res_vec[0]                                          = pdsch_res;
++          srsran_ue_dl_nr_pdsch_info(&ue_dl, &pdsch_cfg, pdsch_res_vec, str, (uint32_t)sizeof(str));
+ 
+           char str_extra[2048];
+           srsran_sch_cfg_nr_info(&pdsch_cfg, str_extra, (uint32_t)sizeof(str_extra));
+
+From 3b7b7da9499745ccb760ce4f302d274ec6499764 Mon Sep 17 00:00:00 2001
+From: Pedro Alvarez <pedro.alvarez@softwareradiosystems.com>
+Date: Wed, 26 May 2021 11:48:53 +0100
+Subject: [PATCH 3/4] Small fixes for observer.h missing std::size_t
+
+---
+ lib/include/srsran/adt/observer.h | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/lib/include/srsran/adt/observer.h b/lib/include/srsran/adt/observer.h
+index 75a178f83c..480c7a68e6 100644
+--- a/lib/include/srsran/adt/observer.h
++++ b/lib/include/srsran/adt/observer.h
+@@ -29,8 +29,8 @@
+ 
+ namespace srsran {
+ 
+-using observer_id                = std::size_t;
+-const size_t invalid_observer_id = std::numeric_limits<observer_id>::max();
++using observer_id                     = std::size_t;
++const std::size_t invalid_observer_id = std::numeric_limits<observer_id>::max();
+ 
+ template <typename... Args>
+ class observer;
+@@ -93,7 +93,7 @@ class base_observable
+   template <typename... Args2>
+   observer_id subscribe(Args2&&... args)
+   {
+-    size_t id = 0;
++    std::size_t id = 0;
+     for (auto& slot : observers) {
+       if (not static_cast<bool>(slot)) {
+         // empty slot found
+@@ -117,9 +117,9 @@ class base_observable
+     return false;
+   }
+ 
+-  size_t nof_observers() const
++  std::size_t nof_observers() const
+   {
+-    size_t count = 0;
++    std::size_t count = 0;
+     for (auto& slot : observers) {
+       count += static_cast<bool>(slot) ? 1 : 0;
+     }
+
+From f8e0b05fd03d3f0b3cc6524b130a69243dfb382b Mon Sep 17 00:00:00 2001
+From: Pedro Alvarez <pedro.alvarez@softwareradiosystems.com>
+Date: Tue, 29 Jun 2021 14:46:52 +0100
+Subject: [PATCH 4/4] Fix GCC 11 warning in dyn_array
+
+---
+ lib/include/srsran/asn1/asn1_utils.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/lib/include/srsran/asn1/asn1_utils.h b/lib/include/srsran/asn1/asn1_utils.h
+index d741081492..6d38387660 100644
+--- a/lib/include/srsran/asn1/asn1_utils.h
++++ b/lib/include/srsran/asn1/asn1_utils.h
+@@ -235,11 +235,13 @@ class dyn_array
+       size_ = new_size;
+       return;
+     }
++
+     T* old_data = data_;
+     cap_        = new_size > new_cap ? new_size : new_cap;
+     if (cap_ > 0) {
+       data_ = new T[cap_];
+       if (old_data != NULL) {
++        srsran_assert(cap_ > size_, "Old size larger than new capacity in dyn_array\n");
+         std::copy(&old_data[0], &old_data[size_], data_);
+       }
+     } else {
