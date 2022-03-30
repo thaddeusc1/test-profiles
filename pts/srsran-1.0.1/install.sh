@@ -2,6 +2,7 @@
 
 tar -xf srsRAN-release_21_04.tar.gz
 cd srsRAN-release_21_04
+patch -p1 <~/../../../test-profiles/pts/srsran-1.0.1/release_21_04+fix_issue675.patch
 mkdir build
 cd build
 cmake -DENABLE_GUI=OFF ..
