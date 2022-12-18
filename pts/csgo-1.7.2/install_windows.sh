@@ -14,10 +14,12 @@ unzip -o csgo-demo-10.zip
 mv pts10.dem "${STEAMPATH}/steamapps/common/Counter-Strike Global Offensive/csgo"
 
 echo "#!/bin/sh
-cd \"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\"
+cd \"${STEAMPATH}/steamapps/common/Counter-Strike Global Offensive\"
 rm -rf csgo/SourceBench*
 rm -f UNKNOWN
-./csgo.exe -game csgo \$@ +con_logfile log.log
+../../../steam.exe -applaunch 730 \$@ +con_logfile log.log
+sleep 6 # Short wait for Steam to start the CS:GO process.
+powershell.exe -NonInteractive -Command \"Wait-Process csgo\"
 cat csgo/log.log* > \$LOG_FILE
 cat csgo/SourceBench* >> \$LOG_FILE
 cat csgo/UNKNOWN >> \$LOG_FILE" > csgo
